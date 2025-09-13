@@ -2,15 +2,15 @@ import json
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
-# Nombre por defecto del archivo para guardar/cargar
+# Nombre por defecto del archivo para guardar
 DEFAULT_FILENAME = "datos.json"
 
 
 class App:
-    """Aplicación principal: gestor visual de ítems con persistencia JSON."""
+    # gestor visual de ítems con persistencia
 
     def __init__(self, root):
-        """Inicializa la GUI y las estructuras internas."""
+
         self.root = root
         self.root.title("Gestor Visual — Lista de Ítems")
         # contador simple para generar IDs únicos en la sesión
@@ -18,8 +18,7 @@ class App:
         # Diccionario interno: id(int) -> texto(str)
         self.items = {}
 
-        # --- Layout ---
-        # Marco superior: entrada y botones
+        #marco superior: entrada y botones
         top_frame = ttk.Frame(root, padding=(10, 10, 10, 5))
         top_frame.pack(fill="x")
 
@@ -34,10 +33,10 @@ class App:
         btn_clear = ttk.Button(top_frame, text="Limpiar", command=self.clear_entry)
         btn_clear.pack(side="left")
 
-        # Bind: Enter en el entry también agrega el ítem
+        # enter en el entry también agrega el ítem
         self.entry.bind("<Return>", self._on_enter_pressed)
 
-        # --- Marco central: tabla / lista (Treeview) ---
+        #marco central
         mid_frame = ttk.Frame(root, padding=(10, 5, 10, 5))
         mid_frame.pack(fill="both", expand=True)
 
@@ -48,16 +47,16 @@ class App:
         self.tree.column("id", width=60, anchor="center")
         self.tree.column("texto", anchor="w")
 
-        # Scrollbar vertical
+        #Scrollbar vertical
         vsb = ttk.Scrollbar(mid_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=vsb.set)
         vsb.pack(side="right", fill="y")
         self.tree.pack(side="left", fill="both", expand=True)
 
-        # Doble click en fila -> mostrar detalles
+        # doble click en fila = mostrar detalles
         self.tree.bind("<Double-1>", self._on_item_double_click)
 
-        # --- Marco inferior: acciones adicionales ---
+        # marco inferior
         bottom_frame = ttk.Frame(root, padding=(10, 5, 10, 10))
         bottom_frame.pack(fill="x")
 
@@ -70,11 +69,11 @@ class App:
         btn_load = ttk.Button(bottom_frame, text="Cargar (JSON)", command=self.load_from_file)
         btn_load.pack(side="left")
 
-        # Botón para importar desde un archivo seleccionado por el usuario
+        # boton para importar desde un archivo seleccionado por el usuario
         btn_import = ttk.Button(bottom_frame, text="Importar archivo...", command=self.import_file)
         btn_import.pack(side="right")
 
-    # ----------------- Operaciones -----------------
+    # operaciones
     def add_item(self):
         """Agrega el texto de entry a la tabla si no está vacío."""
         texto = self.entry.get().strip()
@@ -85,32 +84,28 @@ class App:
         _id = self._next_id
         self._next_id += 1
 
-        # Guardamos en estructura interna y mostramos en la tabla
         self.items[_id] = texto
         self.tree.insert("", "end", iid=str(_id), values=(_id, texto))
 
-        # Limpiamos el campo y devolvemos el foco
+        # limpiamos el campo
         self.entry.delete(0, tk.END)
         self.entry.focus()
 
     def _on_enter_pressed(self, event):
-        """Handler para Enter (viene con un evento)."""
         self.add_item()
         return "break"  # evita que se produzcan comportamientos por defecto
 
     def clear_entry(self):
-        """Limpia el campo de texto."""
         self.entry.delete(0, tk.END)
         self.entry.focus()
 
     def delete_selected(self):
-        """Elimina las filas seleccionadas del Treeview y del diccionario interno."""
         seleccion = self.tree.selection()
         if not seleccion:
             messagebox.showinfo("Eliminar", "No hay filas seleccionadas.")
             return
 
-        # Pregunta de confirmación
+        # pregunta de confirmación
         if not messagebox.askyesno("Confirmar", "¿Deseas eliminar las filas seleccionadas?"):
             return
 
@@ -124,7 +119,7 @@ class App:
             self.items.pop(_id, None)
 
     def _on_item_double_click(self, event):
-        """Muestra una ventana con detalles del elemento al hacer double-click."""
+        #Muestra una ventana con detalles del elemento al hacer doble-click
         sel = self.tree.selection()
         if not sel:
             return
@@ -139,7 +134,7 @@ class App:
 
     # ----------------- Persistencia en JSON -----------------
     def save_to_file(self, filename: str = DEFAULT_FILENAME):
-        """Guarda los ítems actuales en un archivo JSON."""
+        #guarda los ítems actuales en un archivo JSON
         data = [{"id": k, "texto": v} for k, v in self.items.items()]
         try:
             with open(filename, "w", encoding="utf-8") as f:
@@ -154,7 +149,6 @@ class App:
         messagebox.showinfo("Guardar", f"Datos guardados en '{filename}'.")
 
     def load_from_file(self, filename: str = DEFAULT_FILENAME):
-        """Carga ítems desde el archivo JSON (reemplaza la lista actual)."""
         try:
             with open(filename, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -173,12 +167,12 @@ class App:
             messagebox.showerror("Error", f"Error al cargar: {e}")
             return
 
-        # Limpiar datos actuales
+        # limpiar datos actuales
         self.items.clear()
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        # Reconstruir a partir de los datos guardados
+        # reconstruir a partir de los datos guardados
         max_id = 0
         for entry in data:
             try:
@@ -191,12 +185,11 @@ class App:
             if _id > max_id:
                 max_id = _id
 
-        # Asegurar que el próximo ID siga después del máximo cargado
+        # asegurar que el próximo ID siga después del máximo cargado
         self._next_id = max_id + 1
         messagebox.showinfo("Cargar", f"Datos cargados desde '{filename}'.")
 
     def import_file(self):
-        """Permite al usuario elegir un archivo JSON a importar (carga)."""
         path = filedialog.askopenfilename(title="Selecciona archivo JSON",
                                           filetypes=[("JSON files", "*.json"), ("All files", "*.*")])
         if path:
